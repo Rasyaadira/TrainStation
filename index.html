@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#efe8da" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f2eadc'/%3E%3Cpath d='M7 20c4-4 7-7 9-12 2 5 5 8 9 12' fill='none' stroke='%236f806b' stroke-width='2'/%3E%3Ccircle cx='22' cy='8' r='3' fill='%23d9b768'/%3E%3C/svg%3E" />
+  <title>Hirusagari — A Small Station at Noon</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="game">
+    <div id="canvas-container" aria-label="Cozy Japanese railway station"></div>
+
+    <!-- Screen-space interface -->
+    <div id="hud" class="hidden" aria-hidden="false">
+      <div class="hud-top-left">
+        <section class="station-card">
+          <div class="station-kicker"><span class="line-mark"></span> LOCAL LINE</div>
+          <h2 id="station-jp">昼下がり駅</h2>
+          <p id="station-en">Hirusagari Station</p>
+        </section>
+        <div id="train-status" class="train-pill">
+          <span id="train-dot" class="train-dot"></span>
+          <span id="train-status-text">Next local in 0:42</span>
+        </div>
+      </div>
+
+      <div class="hud-top-right">
+        <div id="clock" class="clock-card">12:43</div>
+        <button id="mute-button" class="round-button" type="button" aria-label="Toggle sound" title="Toggle sound (M)">
+          <span id="mute-icon">♪</span>
+        </button>
+      </div>
+
+      <div id="crosshair" aria-hidden="true"><span></span></div>
+
+      <div id="prompt" class="interaction-prompt hidden" role="status">
+        <span class="prompt-key">E</span>
+        <span id="prompt-copy">Interact</span>
+      </div>
+
+      <div id="toast" class="toast hidden" role="status"></div>
+
+      <aside id="inventory" class="inventory-card">
+        <div class="inventory-heading">
+          <span>POCKET</span>
+          <span class="inventory-jp">持ち物</span>
+        </div>
+        <div id="inventory-list">Empty</div>
+      </aside>
+
+      <div class="controls-note">
+        <span>WASD</span> walk <i></i> <span>SHIFT</span> faster <i></i> <span>E</span> interact <i></i> <span>ESC</span> release mouse
+      </div>
+    </div>
+
+    <!-- Title / pause -->
+    <section id="title-screen" class="title-screen" aria-labelledby="game-title">
+      <div class="title-glow" aria-hidden="true"></div>
+      <div class="title-panel">
+        <p class="title-eyebrow">EARLY AUTUMN · 12:43 PM</p>
+        <p class="title-jp">昼下がり、小さな駅で</p>
+        <h1 id="game-title">A Small Station<br><span>at Noon</span></h1>
+        <p id="title-subtitle" class="title-subtitle">A quiet place between two stops. Listen for the crossing bell.</p>
+
+        <button id="start-button" class="start-button" type="button">
+          <span>Click to start</span>
+          <i aria-hidden="true"></i>
+        </button>
+
+        <div class="title-controls" aria-label="Controls">
+          <div><kbd>W A S D</kbd><span>Walk</span></div>
+          <div><kbd>SHIFT</kbd><span>Walk faster</span></div>
+          <div><kbd>MOUSE</kbd><span>Look around</span></div>
+          <div><kbd>E</kbd><span>Interact</span></div>
+          <div><kbd>ESC</kbd><span>Release mouse</span></div>
+        </div>
+        <p class="title-footnote">No rush. No score. Stay as long as you like.</p>
+      </div>
+      <div class="title-landscape" aria-hidden="true">
+        <div class="hill hill-one"></div>
+        <div class="hill hill-two"></div>
+        <div class="power-pole"></div>
+        <div class="wire wire-a"></div>
+        <div class="wire wire-b"></div>
+      </div>
+    </section>
+
+    <!-- Vending machine -->
+    <section id="vending-modal" class="vending-modal hidden" aria-labelledby="vending-title" role="dialog" aria-modal="true">
+      <div class="vending-backdrop"></div>
+      <div class="vending-card">
+        <header class="vending-header">
+          <div>
+            <p class="vending-eyebrow">つめた〜い / あったか〜い</p>
+            <h2 id="vending-title">Drinks</h2>
+          </div>
+          <div class="vending-price">¥ <span>any</span></div>
+        </header>
+        <p class="vending-hint">Choose a drink with a click or the number keys.</p>
+        <div id="vending-grid" class="vending-grid"></div>
+        <footer class="vending-footer">
+          <span class="vending-meta">COINS ONLY · Thank you</span>
+          <button id="vending-close" class="soft-button" type="button">Step back</button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- Between stations -->
+    <section id="travel-screen" class="travel-screen hidden" aria-live="polite">
+      <div class="train-interior">
+        <div class="ride-window">
+          <div class="ride-sky"></div>
+          <div class="ride-sun"></div>
+          <div class="ride-cloud cloud-one"></div>
+          <div class="ride-cloud cloud-two"></div>
+          <div class="ride-far"></div>
+          <div class="ride-city"></div>
+          <div class="ride-poles"></div>
+          <div class="ride-rails"></div>
+          <div class="window-shine"></div>
+          <div class="window-frame"></div>
+        </div>
+        <div class="ride-strap"></div>
+        <div class="ride-seat"></div>
+        <div class="ride-copy">
+          <p class="ride-jp" id="travel-jp">ガタゴト…</p>
+          <p class="ride-en" id="travel-en">Riding the local line</p>
+          <div class="ride-progress"><span></span></div>
+        </div>
+      </div>
+    </section>
+
+    <div id="fade-layer" class="fade-layer" aria-hidden="true"></div>
+    <div class="letterbox letterbox-top" aria-hidden="true"></div>
+    <div class="letterbox letterbox-bottom" aria-hidden="true"></div>
+
+    <noscript>This little station needs JavaScript to come to life.</noscript>
+  </main>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
